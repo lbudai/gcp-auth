@@ -47,9 +47,7 @@ Test(gcp_jwt, basic)
   cr_expect_str_eq(gcp_jwt_get_json_str(jwt, JSON_C_TO_STRING_PLAIN|JSON_C_TO_STRING_NOSLASHESCAPE), "{\"iss\":\"test-service@test-project.iam.gserviceaccount.com\",\"scope\":\"https://www.googleapis.com/auth/logging.write\",\"aud\":\"https://oauth2.googleapis.com/token\",\"exp\":1547845626,\"iat\":1547842026}");
 
   const char *jwt_str = gcp_jwt_get_encoded(jwt);
-  printf("jwt:[%s]\n", jwt_str);
   cr_expect_str_eq(gcp_jwt_get_encoded(jwt), "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ0ZXN0LXNlcnZpY2VAdGVzdC1wcm9qZWN0LmlhbS5nc2VydmljZWFjY291bnQuY29tIiwic2NvcGUiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL2xvZ2dpbmcud3JpdGUiLCJhdWQiOiJodHRwczovL29hdXRoMi5nb29nbGVhcGlzLmNvbS90b2tlbiIsImV4cCI6MTU0Nzg0NTYyNiwiaWF0IjoxNTQ3ODQyMDI2fQ.DWqAZ4sTPsjIdRyUK_-pmO4dKxh0Wu-s1mSOX-hdEJzmpINd0wLG-QZ_UP4f8PHqj-Mt6NN1Dgak6iJWT3ZMRffQwMCiyOXdbXegCj099lm4zp-dc3zILL5jPqEYNz9o0oPpn4ahQSD0vdOKLzqy9dqqzyE4rJ9zv63MFeEvFxg");
-
   gcp_cred_free(creds);
   gcp_jwt_free(jwt);
 }
