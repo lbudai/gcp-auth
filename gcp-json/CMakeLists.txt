@@ -8,7 +8,10 @@ include (CTest)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(JSON-C REQUIRED)
-include_directories("${JSON-C_INCLUDE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+find_package(OpenSSL REQUIRED)
+
+include_directories("${JSON-C_INCLUDE_DIR}" "${OPENSSL_INCLUDE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
 
 add_subdirectory(src)
 add_custom_target(test_memcheck
