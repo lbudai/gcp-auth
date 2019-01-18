@@ -1,6 +1,7 @@
 set(SOURCES
   gcp-credentials.c
   jwt.c
+  gcp-jwt.c
 )
 
 set(SOURCE_GOAUTH
