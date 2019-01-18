@@ -43,6 +43,54 @@ _evp_sha256_digest(const char *msg, unsigned char *md_value)
   return _evp_digest(EVP_sha256(), msg, md_value);
 }
 
+static unsigned int
+_jwt_digest(JWT_ALG alg, const char *msg, unsigned char *md_value)
+{
+  switch (alg)
+  {
+    case JWT_ALG_RS256: return _evp_sha256_digest(msg, md_value);
+    default: return 0; //TODO: error msg
+  }
+  return 0;
+}
+
+static size_t
+_evp_digest_sign(const EVP_MD *md, EVP_PKEY *key, const char *msg, unsigned char **sig)
+{
+  size_t siglen = 0;
+
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (EVP_DigestSignInit(ctx, NULL, md, NULL, key) != 1)
+    goto exit;
+
+  if(EVP_DigestSignUpdate(ctx, (const unsigned char *)msg, strlen(msg)) != 1)
+    goto exit;
+
+  if (EVP_DigestSignFinal(ctx, NULL, &siglen) != 1)
+    goto exit;
+
+  if (!(*sig = OPENSSL_malloc(sizeof(unsigned char) * siglen)))
+    goto exit;
+
+  if (EVP_DigestSignFinal(ctx, *sig, &siglen) != 1)
+    goto exit;
+
+exit:
+  EVP_MD_CTX_free(ctx);
+  return siglen;
+}
+
+static size_t
+_jwt_digest_sign(JWT_ALG alg, EVP_PKEY *key, const char *msg, unsigned char **sig)
+{
+  switch (alg)
+  {
+    case JWT_ALG_RS256: return _evp_digest_sign(EVP_sha256(), key, msg, sig);
+    default: return 0;
+  }
+  return 0;
+}
+
 static const char *JWT_ALG_str[] = 
 {
   "RS256"
@@ -58,7 +106,7 @@ _jwt_alg_lookup_str(JWT_ALG alg)
 }
 
 static char *
-_base64(const char *input, int input_len)
+_base64(const unsigned char *input, int input_len)
 {
   int res;
 	BIO *bio_mem, *bio_b64;
@@ -77,8 +125,8 @@ _base64(const char *input, int input_len)
 	  	BIO_free_all(bio_b64);
   		return NULL;
   	}
-	
-	BIO_get_mem_ptr(bio_b64, &internal_buf);
+
+  BIO_get_mem_ptr(bio_b64, &internal_buf);
 
 	b64_str = (char *) malloc(internal_buf->length + 1);
 	memcpy(b64_str, internal_buf->data, internal_buf->length);
@@ -112,7 +160,7 @@ _header_b64(const char *alg_str)
   char header[256] = {'\0'};
   int header_len = snprintf(header, sizeof(header), "{\"alg\":\"%s\",\"typ\":\"JWT\"}", alg_str);
 
-  return _base64_urlsafe(_base64(header, header_len));
+  return _base64_urlsafe(_base64((const unsigned char *)header, header_len));
 }
 
 static char * 
@@ -131,9 +179,8 @@ static char *
 _build_header_with_payload_b64(const char *alg_str, const char *payload_json)
 {
   char *header_b64 = _header_b64(alg_str);
-  char *payload_b64 = _base64_urlsafe(_base64(payload_json, strlen(payload_json)));
+  char *payload_b64 = _base64_urlsafe(_base64((const unsigned char *)payload_json, strlen(payload_json)));
   char *res = _concat_header_with_payload(header_b64, payload_b64);
-
   free(header_b64);
   free(payload_b64);
 
@@ -146,17 +193,27 @@ char *jwt_encode(JWT_ALG alg, const char *pem_key, const char *payload_json)
   if (!key)
     return NULL;
 
+  char *jwt_str = NULL;
+
   const char *alg_str = _jwt_alg_lookup_str(alg);
   if (!alg_str)
     goto exit;
 
-  char *header_with_payload_b64 = _build_header_with_payload_b64(alg_str, payload_json); 
- 
-  fprintf(stderr, "ehune:[%s]\n", header_with_payload_b64);
+  char *header_with_payload_b64 = _build_header_with_payload_b64(alg_str, payload_json);
+  unsigned char *sig = NULL;
+  size_t siglen = _jwt_digest_sign(alg, key, header_with_payload_b64, &sig);
+  char *sig_b64 = _base64_urlsafe(_base64(sig, siglen));
+  jwt_str = malloc(strlen(header_with_payload_b64) + 1 + strlen(sig_b64) + 1);
+  sprintf(jwt_str, "%s.%s", header_with_payload_b64, sig_b64);
 
 exit:
  if (header_with_payload_b64)
     free(header_with_payload_b64);
   EVP_PKEY_free(key);
-  return NULL;
+  if (sig_b64)
+    free(sig_b64);
+  if (sig)
+    OPENSSL_free(sig);
+
+  return jwt_str;
 }
