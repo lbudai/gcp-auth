@@ -11,5 +11,5 @@ set(SOURCE_GOAUTH
 add_library(gcp_auth ${SOURCES})
 add_executable(goauth ${SOURCE_GOAUTH})
 target_link_libraries(gcp_auth ${JSON-C_LIBRARY} ${OPENSSL_LIBRARIES})
-target_link_libraries(goauth gcp_auth)
+target_link_libraries(goauth gcp_auth ${CURL_LIBRARIES})
 
