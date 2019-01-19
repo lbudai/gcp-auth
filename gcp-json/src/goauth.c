@@ -1,4 +1,5 @@
 #include "gcp-credentials.h"
+#include "gcp-jwt.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <time.h>
 
 void print_usage(FILE *fp, const char *name)
 {
@@ -65,32 +67,39 @@ _gcp_credentials_load_from_file(const char *path)
   return cred;
 }
 
+static GcpJwt *
+_create_jwt(GcpCredentials *cred, const char *scope)
+{
+  GcpJwt *jwt = gcp_jwt_new(gcp_cred_private_key(cred));
+
+  gcp_jwt_set_issuer(jwt, gcp_cred_client_email(cred));
+  gcp_jwt_set_scope(jwt, scope);
+  gcp_jwt_set_audience(jwt, gcp_cred_token_uri(cred));
+  gcp_jwt_set_expiration_time(jwt, 3600);
+  gcp_jwt_set_issued_at(jwt, time(NULL));
+
+  return jwt;
+}
+
+char *
+_request_access_token(const char *jwt, const char *token_uri)
+{
+  return NULL;
+}
+
 int main(int argc, char **argv)
 {
   int r = parse_args(argc, argv);
   if (r != argc)
     return r;
-// TODO: check_args (mandatory/optional)
-
-  //jwt_low_level_api:
-  //jwt *token = jwt_new("RS256");
-  //jwt_set_iss("");
-  //jwt_set_scope("");
-  //jwt_set_aud("");
-  //jwt_set_iat("");
-  //jwt_set_lifetime();//iat+lifetime
-  //jwt_set_key("key");
-  //jwt_free(token);
-
-  // high level api:
-/*  GcpCredentials *cred = gcp_load_from_file(goauth_options.cred_file);
-  jwt = jwt_gcp_new(cred, goauth_options.scope);
-  char *jwt_str = jwt_encode(jwt);*/
-  //TODO: send HTTP POST, read answer, parse token/exp/print answer
-
+  // TODO: check_args (mandatory/optional)
   GcpCredentials *cred = _gcp_credentials_load_from_file(goauth_options.cred_file);
-  printf("project_id:%s\n", gcp_cred_project_id(cred));
-  gcp_cred_free(cred);
 
+  GcpJwt *jwt = _create_jwt(cred, goauth_options.scope);
+  printf("%s\n", gcp_jwt_get_encoded(jwt));
+  //TODO: send HTTP POST, read answer, parse token/exp/print answer
+  gcp_jwt_free(jwt);
+  gcp_cred_free(cred);
+ 
   return 0;
 }
