@@ -9,9 +9,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(JSON-C 0.13.1 REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(CURL REQUIRED)
 
-include_directories("${JSON-C_INCLUDE_DIR}" "${OPENSSL_INCLUDE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
-
+include_directories("${JSON-C_INCLUDE_DIR}" "${OPENSSL_INCLUDE_DIR}" "${CURL_INCLUDE_DIRS}" "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 add_subdirectory(src)
 add_custom_target(test_memcheck
