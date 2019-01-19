@@ -1,14 +1,17 @@
 #include "gcp-credentials.h"
 #include "gcp-jwt.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include <getopt.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <time.h>
+#include <curl/curl.h>
 
 void print_usage(FILE *fp, const char *name)
 {
@@ -81,10 +84,89 @@ _create_jwt(GcpCredentials *cred, const char *scope)
   return jwt;
 }
 
-char *
-_request_access_token(const char *jwt, const char *token_uri)
+typedef struct _http_resp
 {
-  return NULL;
+  size_t size;
+  char* data;
+} http_resp;
+
+static size_t 
+_write_data(void *ptr, size_t size, size_t nmemb, http_resp *data)
+{
+  size_t index = data->size;
+  size_t n = (size * nmemb);
+  char* tmp;
+
+  data->size += (size * nmemb);
+
+  tmp = realloc(data->data, data->size + 1);
+  assert(tmp);
+  data->data = tmp;
+
+  memcpy((data->data + index), ptr, n);
+  data->data[data->size] = '\0';
+
+  return size * nmemb;
+}
+
+char *
+_request_access_token(const char *token_uri, const char *jwt)
+{
+  http_resp response =
+  {
+    .size = 0,
+    .data = calloc(sizeof(char), 4096)
+  };
+
+  CURL *curl = curl_easy_init();
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _write_data);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+  char *body_temp = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=";
+  char *body = malloc(strlen(body_temp) + strlen(jwt) + 1);
+  sprintf(body, "%s%s", body_temp, jwt);
+  printf("%s\n", body);
+
+  if (!curl) //TODO: error handling
+    goto err;
+
+  printf("token_uri:[%s]\n", token_uri);
+  curl_easy_setopt(curl, CURLOPT_URL, token_uri);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+
+  CURLcode ret = curl_easy_perform(curl);
+
+  if (ret != CURLE_OK)
+    {
+      fprintf(stderr, "%s\n", curl_easy_strerror(ret));
+      goto err;
+    }
+
+err:
+  if (response.size == 0)
+  {
+    free(response.data);
+    response.data = NULL;
+  }
+exit:
+  if (body)
+    free(body);
+  curl_easy_cleanup(curl);
+  return response.data;
+}
+
+char *
+_get_access_token(char **token, time_t *exp)
+{
+  GcpCredentials *cred = _gcp_credentials_load_from_file(goauth_options.cred_file);
+  GcpJwt *jwt = _create_jwt(cred, goauth_options.scope);
+  char *access_token = _request_access_token(gcp_cred_token_uri(cred), gcp_jwt_get_encoded(jwt));
+  *token = access_token;
+
+  gcp_jwt_free(jwt);
+  gcp_cred_free(cred);
+
+  return access_token;
 }
 
 int main(int argc, char **argv)
@@ -93,13 +175,11 @@ int main(int argc, char **argv)
   if (r != argc)
     return r;
   // TODO: check_args (mandatory/optional)
-  GcpCredentials *cred = _gcp_credentials_load_from_file(goauth_options.cred_file);
+  time_t exp;
+  char *access_token = NULL;
+  _get_access_token(&access_token, &exp);
+  printf("%s\n", access_token);
+  free(access_token);
 
-  GcpJwt *jwt = _create_jwt(cred, goauth_options.scope);
-  printf("%s\n", gcp_jwt_get_encoded(jwt));
-  //TODO: send HTTP POST, read answer, parse token/exp/print answer
-  gcp_jwt_free(jwt);
-  gcp_cred_free(cred);
- 
   return 0;
 }
