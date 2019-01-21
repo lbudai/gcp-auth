@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <time.h>
 #include <curl/curl.h>
+#include <json.h>
 
 void print_usage(FILE *fp, const char *name)
 {
@@ -46,6 +47,37 @@ parse_args(int argc, char **argv)
   return optind;
 }
 
+typedef struct _AccessToken AccessToken;
+
+struct _AccessToken
+{
+  char *token;
+  unsigned int expiration;
+};
+
+AccessToken *
+access_token_new(char *token, unsigned int exp)
+{
+  AccessToken *self = calloc(1, sizeof(AccessToken));
+  self->token = token; //dup?
+  self->expiration = exp;
+
+  return self;
+}
+
+void
+access_token_free(AccessToken *self)
+{
+  if (!self)
+    return;
+
+  if (self->token)
+    free(self->token);
+
+  free(self);
+}
+
+//TODO: renaming, refactors, new class for getting access token + parse (and add verify method)
 static GcpCredentials *
 _gcp_credentials_load_from_file(const char *path)
 {
@@ -148,21 +180,80 @@ err:
     free(response.data);
     response.data = NULL;
   }
-exit:
   if (body)
     free(body);
   curl_easy_cleanup(curl);
   return response.data;
 }
 
-char *
-_get_access_token(char **token, time_t *exp)
+//TODO: json-wrapper/helper!
+static const char *
+_json_get_string(const struct json_object *json, const char *key)
+{
+  struct json_object *val = NULL;
+
+  json_object_object_get_ex(json, key, &val);
+  if (!val)
+    return NULL;
+
+  enum json_type type = json_object_get_type(val);
+  if (type != json_type_string)
+    return NULL;
+
+  return json_object_get_string(val);
+}
+
+static int32_t
+_json_get_int32(const struct json_object *json, const char *key)
+{
+  struct json_object *val = NULL;
+
+  json_object_object_get_ex(json, key, &val);
+  if (!val) //TODO...
+    {
+      errno = EINVAL;
+      return 0;
+    }
+
+  return json_object_get_int(val);
+}
+
+static AccessToken *
+_parse_gauth_response(const char *response, size_t len)
+{
+  AccessToken *token = NULL;
+
+  struct json_tokener *tokener = json_tokener_new();
+  struct json_object *jso = json_tokener_parse_ex(tokener, response, len);
+  if (tokener->err != json_tokener_success || !jso)
+    goto exit_;
+
+  const char *token_str = _json_get_string(jso, "access_token");
+  if (!token_str)
+    goto exit_;
+
+  int exp = _json_get_int32(jso, "expires_in");
+  if (errno == EINVAL && exp == 0)
+    goto exit_;
+
+  token = access_token_new(strdup(token_str), exp);
+
+exit_:
+  json_tokener_free(tokener);
+  json_object_put(jso);
+  return token;
+}
+
+static AccessToken *
+_get_access_token()
 {
   GcpCredentials *cred = _gcp_credentials_load_from_file(goauth_options.cred_file);
   GcpJwt *jwt = _create_jwt(cred, goauth_options.scope);
-  char *access_token = _request_access_token(gcp_cred_token_uri(cred), gcp_jwt_get_encoded(jwt));
-  *token = access_token;
+  char *access_token_response = _request_access_token(gcp_cred_token_uri(cred), gcp_jwt_get_encoded(jwt));
 
+  AccessToken *access_token = _parse_gauth_response(access_token_response, strlen(access_token_response));
+
+  free(access_token_response);
   gcp_jwt_free(jwt);
   gcp_cred_free(cred);
 
@@ -175,11 +266,9 @@ int main(int argc, char **argv)
   if (r != argc)
     return r;
   // TODO: check_args (mandatory/optional)
-  time_t exp;
-  char *access_token = NULL;
-  _get_access_token(&access_token, &exp);
-  printf("%s\n", access_token);
-  free(access_token);
+  AccessToken *token = _get_access_token();
+  printf("%s\nexpiration:%d\n", token->token, token->expiration);
+  access_token_free(token);
 
   return 0;
 }
