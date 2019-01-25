@@ -23,6 +23,11 @@
 #include "gcp-credentials.h"
 #include <json.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <stdio.h> //perror, TODO
 
 struct _GcpCredentials
 {
@@ -47,6 +52,32 @@ exit_:
   json_tokener_free(tokener);
 
   return self;
+}
+
+GcpCredentials* 
+gcp_cred_new_from_file(const char *credentials_file_path)
+{
+  int fd = open(credentials_file_path, O_RDONLY);
+  if (fd < 0)
+    {
+      perror(strerror(errno)); //TODO
+      return NULL;
+    }
+
+  struct stat st;
+  int r = fstat(fd, &st);
+  if (r != 0)
+    {
+      perror(strerror(errno)); //TODO
+      return NULL;
+    }
+
+  size_t fsize = st.st_size;
+  char *content = (char *)mmap(0, fsize, PROT_READ, MAP_PRIVATE, fd, 0);
+  GcpCredentials *cred = gcp_cred_new(content);
+  munmap(content, fsize);
+
+  return cred;
 }
 
 static struct json_object *

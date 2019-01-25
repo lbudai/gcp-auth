@@ -25,6 +25,7 @@
 
 typedef struct _GcpCredentials GcpCredentials;
 
+GcpCredentials* gcp_cred_new_from_file(const char *credentials_file_path);
 GcpCredentials* gcp_cred_new(const char *gcp_credentials_str);
 void gcp_cred_free(GcpCredentials *self);
 
