@@ -2,11 +2,6 @@
 #include <json.h>
 #include <string.h>
 
-#include <stdio.h> //TODO
-
-#define DEBUG(...) fprintf(stderr, "%s::%s::%d\n\t", __FILE__, __FUNCTION__, __LINE__);\
-  fprintf(stderr, __VA_ARGS__)
-
 struct _GcpCredentials
 {
   struct json_object *json_obj;
@@ -19,11 +14,10 @@ GcpCredentials *gcp_cred_new(const char *credentials_json)
   struct json_tokener *tokener = json_tokener_new();
     {
       struct json_object *jso = json_tokener_parse_ex(tokener, credentials_json, strlen(credentials_json));
+
       if (tokener->err != json_tokener_success || !jso)
-      {
-        DEBUG("Failed to parse JSON input[%s]\n", credentials_json);
         goto exit_;
-      }
+
       self = (GcpCredentials *)calloc(1, sizeof(GcpCredentials));
       self->json_obj = jso;
     }
@@ -40,10 +34,7 @@ _get_value_obj(const struct json_object *json, const char *key)
 
   json_object_object_get_ex(json, key, &val);
   if (!val)
-    {
-      DEBUG("key=[%s] not found\n", key);
-      return NULL;
-    }
+    return NULL;
 
   return val;
 }
@@ -57,10 +48,7 @@ _get_string_value(const struct json_object *json, const char *key)
 
   enum json_type type = json_object_get_type(val);
   if (type != json_type_string)
-    {
-      DEBUG("Invalid string type;key=%s\n", key);
-      return NULL;
-    }
+    return NULL;
 
   return json_object_get_string(val); // TODO; check if type is not pre-checked
 }
