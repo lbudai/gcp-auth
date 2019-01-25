@@ -50,7 +50,7 @@ _get_string_value(const struct json_object *json, const char *key)
   if (type != json_type_string)
     return NULL;
 
-  return json_object_get_string(val); // TODO; check if type is not pre-checked
+  return json_object_get_string(val);
 }
 
 void gcp_cred_free(GcpCredentials *self)
