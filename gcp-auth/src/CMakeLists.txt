@@ -2,7 +2,7 @@ set(SOURCES
   gcp-credentials.c
   jwt.c
   gcp-jwt.c
-  gcp-auth.c
+  gcp-access-token.c
 )
 
 set(SOURCE_GOAUTH

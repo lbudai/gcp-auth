@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-#include "gcp-auth.h"
+#include "gcp-access-token.h"
 #include "gcp-credentials.h"
 #include "gcp-jwt.h"
 #include <stdlib.h>
