@@ -21,6 +21,7 @@
  */
 
 #include "jwt.h"
+#include "asprintf-compat.h"
 #include <stddef.h>
 #include <string.h>
 #include <openssl/bio.h>
@@ -188,11 +189,9 @@ _header_b64(const char *alg_str)
 static char * 
 _concat_header_with_payload(const char *header, const char *payload)
 {
-  size_t len = strlen(header) + 1 + strlen(payload) + 1;//header64.payload64
-  char *res = malloc(len);
-  res[len - 1] = '\0';
-
-  sprintf(res, "%s.%s", header, payload);
+  char *res = NULL;
+  if (asprintf(&res, "%s.%s", header, payload) < 0)
+    return NULL;
 
   return res;
 }
@@ -215,8 +214,6 @@ char *jwt_encode(JWT_ALG alg, const char *pem_key, const char *payload_json)
   if (!key)
     return NULL;
 
-  char *jwt_str = NULL;
-
   const char *alg_str = _jwt_alg_lookup_str(alg);
   if (!alg_str)
     goto exit;
@@ -225,8 +222,7 @@ char *jwt_encode(JWT_ALG alg, const char *pem_key, const char *payload_json)
   unsigned char *sig = NULL;
   size_t siglen = _jwt_digest_sign(alg, key, header_with_payload_b64, &sig);
   char *sig_b64 = _base64_urlsafe(_base64(sig, siglen));
-  jwt_str = malloc(strlen(header_with_payload_b64) + 1 + strlen(sig_b64) + 1);
-  sprintf(jwt_str, "%s.%s", header_with_payload_b64, sig_b64);
+  char *jwt_str = _concat_header_with_payload(header_with_payload_b64, sig_b64);
 
 exit:
  if (header_with_payload_b64)
