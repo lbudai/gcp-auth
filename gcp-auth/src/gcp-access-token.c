@@ -21,6 +21,7 @@
  */
 
 #include "gcp-access-token.h"
+#include "asprintf-compat.h"
 #include "gcp-credentials.h"
 #include "gcp-jwt.h"
 #include <stdlib.h>
@@ -146,9 +147,9 @@ _request_access_token(const char *token_uri, const char *jwt)
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, _write_data);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-  static const char *body_temp = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=";
-  char *body = malloc(strlen(body_temp) + strlen(jwt) + 1);
-  sprintf(body, "%s%s", body_temp, jwt);
+  char *body = NULL;
+  if (asprintf(&body, "grant_type=urn%%3Aietf%%3Aparams%%3Aoauth%%3Agrant-type%%3Ajwt-bearer&assertion=%s", jwt) < 0)
+    goto err;
 
   if (!curl) //TODO: error handling
     goto err;
