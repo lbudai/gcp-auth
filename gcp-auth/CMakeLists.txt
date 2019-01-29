@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.1.0)
 
-project(gcp-auth C)
+project(gcp-auth VERSION 0.1.1 DESCRIPTION "example auth lib for requesting access token to GCP" LANGUAGES C)
 
 include(CheckCSourceCompiles)
 include(CheckSymbolExists)
+include(GNUInstallDirs)
+
 add_definitions(-D_GNU_SOURCE=1)
 set(MEMORYCHECK_COMMAND_OPTIONS "${MEMORYCHECK_COMMAND_OPTIONS} --trace-children=yes --leak-check=full --error-exitcode=255")
 include (CTest)
@@ -36,3 +38,11 @@ if (ENABLE_TESTS)
   enable_testing()
   add_subdirectory(test)
 endif()
+
+set(libdir "\${libdir}")
+set(includedir "\${includedir}")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/gcp_auth.pc.in ${CMAKE_CURRENT_BINARY_DIR}/gcp_auth.pc @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION include/gcp-auth)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gcp_auth.pc DESTINATION lib/pkgconfig)
+
