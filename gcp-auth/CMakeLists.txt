@@ -14,7 +14,7 @@ find_package(JSON-C 0.13.1 REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(CURL REQUIRED)
 
-include_directories("${JSON-C_INCLUDE_DIR}" "${OPENSSL_INCLUDE_DIR}" "${CURL_INCLUDE_DIRS}" "${CMAKE_CURRENT_SOURCE_DIR}/src" ${CMAKE_CURRENT_BINARY_DIR})
+include_directories("${JSON-C_INCLUDE_DIR}" "${OPENSSL_INCLUDE_DIR}" "${CURL_INCLUDE_DIRS}" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(src)
 
