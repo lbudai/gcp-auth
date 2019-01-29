@@ -3,6 +3,7 @@ set(SOURCES
   jwt.c
   gcp-jwt.c
   gcp-access-token.c
+  asprintf-compat.c
 )
 
 set(SOURCE_GOAUTH
