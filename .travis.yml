@@ -1,0 +1,30 @@
+language: c
+os: linux
+cache:
+  apt: true
+
+addons:
+  apt:
+    sources:
+      - sourceline: 'deb http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04 ./'
+        key_url: 'http://download.opensuse.org/repositories/home:/laszlo_budai:/syslog-ng/xUbuntu_16.04/Release.key'
+    packages:
+      - cmake
+      - libssl-dev
+      - libjson-c-dev
+      - libcurl4-gnutls-dev
+      - pkg-config
+      - criterion-dev
+compiler:
+  - gcc
+  - clang
+
+script:
+  - mkdir build
+  - cd build
+  - cmake -D_CMAKE_INSTALL_PREFIX=$HOME/install/gcp-auth ../gcp-auth
+  - make
+  - make test
+  - make install
+  - $HOME/install/bin/goauth -h
+
