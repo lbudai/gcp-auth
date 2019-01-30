@@ -34,7 +34,7 @@ set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_LIBRARIES})
 check_symbol_exists(EVP_MD_CTX_reset "openssl/evp.h" HAVE_EVP_MD_CTX_RESET)
 cmake_pop_check_state()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h)
 
 
 add_custom_target(test_memcheck
