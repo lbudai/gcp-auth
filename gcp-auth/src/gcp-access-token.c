@@ -74,7 +74,10 @@ gcp_access_token_new(const char *credentials_json_path, const char *scope)
 {
   GcpCredentials *cred = gcp_cred_new_from_file(credentials_json_path);
   if (!cred)
-    return NULL;
+    {
+      fprintf(stderr, "Failed to parse %s.\n", credentials_json_path);
+      return NULL;
+    }
 
   GcpAccessToken *self = calloc(1, sizeof(GcpAccessToken));
   self->cred = cred;

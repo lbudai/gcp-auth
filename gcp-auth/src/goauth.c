@@ -90,6 +90,10 @@ int main(int argc, char **argv)
     return 1;
 
   GcpAccessToken *token = gcp_access_token_new(goauth_options.cred_file, goauth_options.scope);
+  if (!token)
+    {
+      return 1;
+    }
   gcp_access_token_request(token);
   printf("%s\nexpiration:%d\n", gcp_access_token_to_string(token), gcp_access_token_get_lifetime(token));
   gcp_access_token_free(token);

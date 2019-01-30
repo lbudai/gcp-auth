@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/mman.h>
-#include <stdio.h> //perror, TODO
+#include <stdio.h>
 
 struct _GcpCredentials
 {
@@ -60,7 +60,7 @@ gcp_cred_new_from_file(const char *credentials_file_path)
   int fd = open(credentials_file_path, O_RDONLY);
   if (fd < 0)
     {
-      perror(strerror(errno)); //TODO
+      fprintf(stderr, "open(%s):%s\n", credentials_file_path, strerror(errno));
       return NULL;
     }
 
@@ -68,7 +68,7 @@ gcp_cred_new_from_file(const char *credentials_file_path)
   int r = fstat(fd, &st);
   if (r != 0)
     {
-      perror(strerror(errno)); //TODO
+      fprintf(stderr, "stat(%s):%s\n", credentials_file_path, strerror(errno));
       return NULL;
     }
 
