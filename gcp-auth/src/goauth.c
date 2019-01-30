@@ -27,6 +27,8 @@
 #include <string.h>
 #include <getopt.h>
 
+const char *DEFAULT_SCOPE = "https://www.googleapis.com/auth/logging.write";
+
 void print_usage(FILE *fp, const char *name)
 {
   fprintf(fp, "%s -c credentials json file -s scope [-r] [-h]\n"
@@ -60,12 +62,32 @@ parse_args(int argc, char **argv)
   return optind;
 }
 
+static int
+_check_options()
+{
+  if (!goauth_options.cred_file)
+    {
+      fprintf(stderr, "credentials is mandatory\n");
+      return 0;
+    }
+
+  if (!goauth_options.scope)
+    {
+      fprintf(stderr, "scope is set to default: %s\n", DEFAULT_SCOPE);
+      goauth_options.scope = DEFAULT_SCOPE;
+    }
+
+  return 1;
+}
+
 int main(int argc, char **argv)
 {
   int r = parse_args(argc, argv);
   if (r != argc)
     return r;
-  // TODO: check_args (mandatory/optional)
+
+  if (!_check_options())
+    return 1;
 
   GcpAccessToken *token = gcp_access_token_new(goauth_options.cred_file, goauth_options.scope);
   gcp_access_token_request(token);
