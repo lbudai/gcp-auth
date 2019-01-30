@@ -214,6 +214,10 @@ _build_header_with_payload_b64(const char *alg_str, const char *payload_json)
 
 char *jwt_encode(JWT_ALG alg, const char *pem_key, const char *payload_json)
 {
+  char *jwt_str = NULL;
+  unsigned char *sig = NULL;
+  char *sig_b64 = NULL;
+  char *header_with_payload_b64 = NULL;
   EVP_PKEY *key = _load_pkey_from_pem_str(pem_key);
   if (!key)
     return NULL;
@@ -222,11 +226,10 @@ char *jwt_encode(JWT_ALG alg, const char *pem_key, const char *payload_json)
   if (!alg_str)
     goto exit;
 
-  char *header_with_payload_b64 = _build_header_with_payload_b64(alg_str, payload_json);
-  unsigned char *sig = NULL;
+  header_with_payload_b64 = _build_header_with_payload_b64(alg_str, payload_json);
   size_t siglen = _jwt_digest_sign(alg, key, header_with_payload_b64, &sig);
-  char *sig_b64 = _base64_urlsafe(_base64(sig, siglen));
-  char *jwt_str = _concat_header_with_payload(header_with_payload_b64, sig_b64);
+  sig_b64 = _base64_urlsafe(_base64(sig, siglen));
+  jwt_str = _concat_header_with_payload(header_with_payload_b64, sig_b64);
 
 exit:
  if (header_with_payload_b64)
