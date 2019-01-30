@@ -24,8 +24,8 @@
 #include "asprintf-compat.h"
 #include <stddef.h>
 #include <string.h>
+#include "openssl-compat.h"
 #include <openssl/bio.h>
-#include <openssl/pem.h>
 
 static EVP_PKEY*
 _load_pkey_from_pem_str(const char *pem)
@@ -44,7 +44,8 @@ static unsigned int
 _evp_digest(const EVP_MD *md, const char *msg, unsigned char *md_value)
 {
   unsigned int md_len = 0;
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  DECLARE_EVP_MD_CTX(ctx);
+  EVP_MD_CTX_init(ctx);
 
   if(EVP_DigestInit_ex(ctx, md, NULL) != 1)
     goto exit;
@@ -56,7 +57,8 @@ _evp_digest(const EVP_MD *md, const char *msg, unsigned char *md_value)
     goto exit;
 
 exit:
-  EVP_MD_CTX_free(ctx);
+  EVP_MD_CTX_cleanup(ctx);
+  EVP_MD_CTX_destroy(ctx);
   return md_len;
 }
 
@@ -82,7 +84,8 @@ _evp_digest_sign(const EVP_MD *md, EVP_PKEY *key, const char *msg, unsigned char
 {
   size_t siglen = 0;
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  DECLARE_EVP_MD_CTX(ctx);
+  EVP_MD_CTX_init(ctx);
   if (EVP_DigestSignInit(ctx, NULL, md, NULL, key) != 1)
     goto exit;
 
@@ -99,7 +102,8 @@ _evp_digest_sign(const EVP_MD *md, EVP_PKEY *key, const char *msg, unsigned char
     goto exit;
 
 exit:
-  EVP_MD_CTX_free(ctx);
+  EVP_MD_CTX_cleanup(ctx);
+  EVP_MD_CTX_destroy(ctx);
   return siglen;
 }
 
