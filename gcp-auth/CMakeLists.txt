@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.1.0)
 
-project(gcp-auth VERSION 0.1.1 DESCRIPTION "example auth lib for requesting access token to GCP" LANGUAGES C)
+project(gcp-auth VERSION 0.1.1 LANGUAGES "C")
+set(PROJECT_DESCRIPTION "example auth lib for requesting access token to GCP")
 
-include(CheckCSourceCompiles)
 include(CheckSymbolExists)
 include(GNUInstallDirs)
 
