@@ -23,9 +23,9 @@ compiler:
 script:
   - mkdir build
   - cd build
-  - cmake -D_CMAKE_INSTALL_PREFIX=$HOME/install/gcp-auth ../gcp-auth
+  - cmake -DCMAKE_INSTALL_PREFIX=$HOME/install/gcp-auth ../gcp-auth
   - make
   - make test
   - make install
-  - $HOME/install/bin/goauth -h
+  - $HOME/install/gcp-auth/bin/goauth --help
 
