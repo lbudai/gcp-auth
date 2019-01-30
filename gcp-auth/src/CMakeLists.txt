@@ -12,6 +12,7 @@ set(LIB_HEADERS
   ${CMAKE_SOURCE_DIR}/include/gcp-jwt.h
   ${CMAKE_SOURCE_DIR}/include/gcp-access-token.h
   ${CMAKE_SOURCE_DIR}/include/asprintf-compat.h
+  ${CMAKE_SOURCE_DIR}/include/openssl-compat.h
 )
 
 set(SOURCE_GOAUTH

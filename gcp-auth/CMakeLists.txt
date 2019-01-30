@@ -4,6 +4,7 @@ project(gcp-auth VERSION 0.1.1 LANGUAGES "C")
 set(PROJECT_DESCRIPTION "example auth lib for requesting access token to GCP")
 
 include(CheckSymbolExists)
+include(CMakePushCheckState)
 include(GNUInstallDirs)
 
 add_definitions(-D_GNU_SOURCE=1)
@@ -26,6 +27,12 @@ add_subdirectory(src)
 set(CMAKE_REQUIRED_DEFINITIONS "-D_GNU_SOURCE")
 check_symbol_exists(asprintf "stdio.h" HAVE_ASPRINTF)
 message(STATUS "asprintf ${HAVE_ASPRINTF}")
+
+cmake_push_check_state(RESET)
+set(CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+set(CMAKE_REQUIRED_LIBRARIES ${OPENSSL_LIBRARIES})
+check_symbol_exists(EVP_MD_CTX_reset "openssl/evp.h" HAVE_EVP_MD_CTX_RESET)
+cmake_pop_check_state()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in config.h)
 

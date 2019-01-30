@@ -1,3 +1,2 @@
 #cmakedefine01 HAVE_ASPRINTF
-
-
+#cmakedefine01 HAVE_EVP_MD_CTX_RESET
