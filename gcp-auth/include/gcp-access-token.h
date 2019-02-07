@@ -28,6 +28,7 @@ typedef struct _GcpAccessToken GcpAccessToken;
 GcpAccessToken *gcp_access_token_new(const char *credentials_json_path, const char *scope);
 void gcp_access_token_free(GcpAccessToken *self);
 
+void gcp_access_token_set_request_timeout(GcpAccessToken *self, long timeout);
 int gcp_access_token_request(GcpAccessToken *self);
 const char *gcp_access_token_to_string(GcpAccessToken *self);
 unsigned gcp_access_token_get_lifetime(GcpAccessToken *self);

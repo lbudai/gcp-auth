@@ -38,6 +38,7 @@ struct _GcpAccessToken
 {
   GcpCredentials *cred;
   char *scope;
+  long request_timeout;
   AccessToken *token;
 };
 
@@ -138,7 +139,7 @@ _write_data(void *ptr, size_t size, size_t nmemb, http_resp *data)
 }
 
 char *
-_request_access_token(const char *token_uri, const char *jwt)
+_request_access_token(const char *token_uri, const char *jwt, long timeout)
 {
   http_resp response =
   {
@@ -159,6 +160,7 @@ _request_access_token(const char *token_uri, const char *jwt)
 
   curl_easy_setopt(curl, CURLOPT_URL, token_uri);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
 
   CURLcode ret = curl_easy_perform(curl);
 
@@ -237,6 +239,12 @@ exit_:
   return token;
 }
 
+void
+gcp_access_token_set_request_timeout(GcpAccessToken *self, long timeout)
+{
+  self->request_timeout = timeout;
+}
+
 int 
 gcp_access_token_request(GcpAccessToken *self)
 {
@@ -246,7 +254,7 @@ gcp_access_token_request(GcpAccessToken *self)
   if (!jwt)
     return 0;
 
-  char *auth_response = _request_access_token(gcp_cred_token_uri(self->cred), gcp_jwt_get_encoded(jwt));
+  char *auth_response = _request_access_token(gcp_cred_token_uri(self->cred), gcp_jwt_get_encoded(jwt), self->request_timeout);
   gcp_jwt_free(jwt);
 
   if (!auth_response)
