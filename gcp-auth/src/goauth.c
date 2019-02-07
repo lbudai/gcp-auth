@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <errno.h>
 
 const char *DEFAULT_SCOPE = "https://www.googleapis.com/auth/logging.write";
 
@@ -33,6 +34,7 @@ void print_usage(FILE *fp, const char *name)
 {
   fprintf(fp, "%s -c credentials json file -s scope [-r] [-h]\n"
       "\t-r : request access token\n"
+      "\t-t : request timeout (seconds)\n"
       "\t-h : help\n", name);
 }
 
@@ -40,6 +42,7 @@ static struct
 {
   const char *cred_file;
   const char *scope;
+  long timeout;
   int request_access_token:1;
 } goauth_options;
 
@@ -47,13 +50,24 @@ static int
 parse_args(int argc, char **argv)
 {
   int opt;
-  while ((opt = getopt(argc, argv, "c:s:rh")) != -1)
+  while ((opt = getopt(argc, argv, "c:s:rt:h")) != -1)
     {
       switch (opt)
       {
         case 'c': goauth_options.cred_file = optarg ; break;
         case 's': goauth_options.scope = optarg; break;
         case 'r': goauth_options.request_access_token = 1; break;
+        case 't':
+                  {
+                    long timeout = strtol(optarg, NULL, 10);
+                    if (errno == ERANGE)
+                      {
+                        fprintf(stderr, "timeout is out of range, using default value(5)");
+                        timeout = 5;
+                      }
+                    goauth_options.timeout = timeout;
+                  }
+                  break;
         case 'h': print_usage(stderr, argv[0]); break;
         case '?': print_usage(stderr, argv[0]); return 0;
         default: print_usage(stderr, argv[0]); return 0;
@@ -94,6 +108,7 @@ int main(int argc, char **argv)
     {
       return 1;
     }
+  gcp_access_token_set_request_timeout(token, goauth_options.timeout);
   gcp_access_token_request(token);
   printf("%s\nexpiration:%d\n", gcp_access_token_to_string(token), gcp_access_token_get_lifetime(token));
   gcp_access_token_free(token);
