@@ -74,7 +74,7 @@ _jwt_digest(JWT_ALG alg, const char *msg, unsigned char *md_value)
   switch (alg)
   {
     case JWT_ALG_RS256: return _evp_sha256_digest(msg, md_value);
-    default: return 0; //TODO: error msg
+    default: return 0;
   }
   return 0;
 }
@@ -136,31 +136,30 @@ static char *
 _base64(const unsigned char *input, int input_len)
 {
   int res;
-	BIO *bio_mem, *bio_b64;
-	BUF_MEM *internal_buf;
-	char *b64_str;
+  BIO *bio_mem, *bio_b64;
+  BUF_MEM *internal_buf;
+  char *b64_str;
 
-	bio_b64 = BIO_new(BIO_f_base64());
-	BIO_set_flags(bio_b64, BIO_FLAGS_BASE64_NO_NL);
-	bio_mem = BIO_new(BIO_s_mem());
-	bio_b64 = BIO_push(bio_b64, bio_mem);
-	
-	BIO_write(bio_b64, input, input_len);
-	res = BIO_flush(bio_b64);
-	if(res < 1) 
+  bio_b64 = BIO_new(BIO_f_base64());
+  BIO_set_flags(bio_b64, BIO_FLAGS_BASE64_NO_NL);
+  bio_mem = BIO_new(BIO_s_mem());
+  bio_b64 = BIO_push(bio_b64, bio_mem);
+
+  BIO_write(bio_b64, input, input_len);
+  res = BIO_flush(bio_b64);
+  if(res < 1)
     {
-	  	BIO_free_all(bio_b64);
-  		return NULL;
-  	}
+      BIO_free_all(bio_b64);
+      return NULL;
+    }
 
   BIO_get_mem_ptr(bio_b64, &internal_buf);
+  b64_str = (char *) malloc(internal_buf->length + 1);
+  memcpy(b64_str, internal_buf->data, internal_buf->length);
+  b64_str[internal_buf->length] = '\0';
 
-	b64_str = (char *) malloc(internal_buf->length + 1);
-	memcpy(b64_str, internal_buf->data, internal_buf->length);
-	b64_str[internal_buf->length] = '\0';
-
-	BIO_free_all(bio_b64);
-	return b64_str;
+  BIO_free_all(bio_b64);
+  return b64_str;
 }
 
 static char * 
@@ -173,7 +172,7 @@ _base64_urlsafe(char *b64)
       {
         case '+' : b64[i] = '-'; break;
         case '/' : b64[i] = '_'; break;
-        case '=' : b64[i] = '\0'; break; //TODO: '\r\n...'
+        case '=' : b64[i] = '\0'; break;
         default: break;
       }
     }
