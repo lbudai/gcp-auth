@@ -74,6 +74,13 @@ gcp_cred_new_from_file(const char *credentials_file_path)
 
   size_t fsize = st.st_size;
   char *content = (char *)mmap(0, fsize, PROT_READ, MAP_PRIVATE, fd, 0);
+
+  if (content == MAP_FAILED)
+    {
+      fprintf(stderr, "failed to read file (%s)\n", credentials_file_path);
+      return NULL;
+    }
+
   GcpCredentials *cred = gcp_cred_new(content);
   munmap(content, fsize);
 
