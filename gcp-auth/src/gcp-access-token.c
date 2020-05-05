@@ -249,6 +249,7 @@ int
 gcp_access_token_request(GcpAccessToken *self)
 {
   access_token_free(self->token);
+  self->token = NULL;
 
   GcpJwt *jwt = _create_jwt(self->cred, self->scope);
   if (!jwt)
